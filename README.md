@@ -1,4 +1,67 @@
-## 🛠 X API Setup
+# X MCP Server
+
+This is an **MCP (Model Context Protocol) server** that allows MCP Clients (Claude Desktop, ChatGPT, Cursor, etc) to interact with the **X (Twitter) API**.
+
+features:
+- search recent posts on X
+- create new posts on your behalf
+
+Authentication is handled locally via OAuth2.1.  
+Each user connects **their own X Developer App**, keeping credentials secure and isolated.
+
+---
+
+## What This MCP Server Enables
+
+Once configured and connected to an MCP Client, the following tools are available:
+
+### `search_recent`
+Search posts from the last ~7 days using X’s **Recent Search API**.
+
+Example use cases:
+- Monitor discussion around a topic
+- Track posts from a specific account
+- Analyze reactions to breaking news
+
+Parameters include:
+- `query`
+- `max_results`
+- pagination support (`next_token`)
+- time filters (`start_time`, `end_time`)
+
+---
+
+### `create_post`
+Create a new post on X as the authenticated user.
+
+Supports:
+- Standard posts (≤ 280 characters)
+- Replies (via `reply_to_post_id`)
+- Quote posts (via `quote_post_id`)
+
+> Note: Long posts require X Premium and are intentionally not auto-threaded.
+
+---
+
+### `login_to_x`
+Starts the OAuth login flow.
+
+Claude will return a URL that you open in your browser to authorize the app.  
+Tokens are stored **locally on your machine** and automatically refreshed.
+
+---
+
+## Architecture Overview
+
+- **MCP transport:** stdio (Claude Desktop ↔ server)
+- **OAuth callback:** local FastAPI HTTP server (`localhost`)
+- **Token storage:** `~/.x-mcp/auth.json`
+
+This design follows standard OAuth security practices.
+
+---
+
+## X API Setup
 
 To use this project, each user must create their **own X Developer App** and supply their credentials locally. This keeps credentials secure and avoids shared-account risks.
 
@@ -54,3 +117,71 @@ X_CLIENT_ID=your_client_id_here
 X_CLIENT_SECRET=your_client_secret_here
 X_REDIRECT_URI=http://localhost:8000/callback
 ```
+
+---
+
+## Connecting the Server to Claude Desktop
+
+Claude Desktop discovers MCP servers via a local configuration file.
+
+### 1. Open Claude Desktop config
+
+On macOS:
+
+```bash
+~/Library/Application\\ Support/Claude/claude_desktop_config.json
+```
+
+Create the file if it does not already exist.
+
+---
+
+### 2. Add the MCP server entry
+
+Update the file as follows (adjust paths if needed):
+
+```json
+{
+  "mcpServers": {
+    "x-mcp": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "/ABSOLUTE/PATH/TO/THIS/REPO",
+        "run",
+        "x.py"
+      ]
+    }
+  }
+}
+```
+
+---
+
+## First-Time Login
+
+Before using any X tools:
+
+1. Ask Claude to log you in (e.g. “log me into X”)
+2. Claude will call `login_to_x`
+3. Open the returned authorization URL in your browser
+4. Approve the app
+5. You’ll see a confirmation page saying login succeeded
+
+Tokens are now stored locally and will refresh automatically.
+
+---
+
+## Notes & Limitations
+
+- Each user must use their **own X Developer App**
+- Posts are limited to **280 characters** unless the account has X Premium
+- Tokens are stored locally at `~/.x-mcp/`
+---
+
+## Security Model
+
+- OAuth 2.1 with PKCE
+- No shared credentials
+- No secrets passed through Claude
+- All sensitive data remains on the local machine
