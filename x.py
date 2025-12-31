@@ -298,7 +298,7 @@ async def create_post(
 
     MAX_TEXT_LENGTH = 280
     if len(text) > MAX_TEXT_LENGTH:
-        return {ok: False, "error": f"text must be less than {MAX_TEXT_LENGTH} characters"}
+        return {"ok": False, "error": f"text must be less than {MAX_TEXT_LENGTH} characters"}
     access_token = await get_valid_access_token()
 
     url = f"{X_API_BASE}/2/tweets"
