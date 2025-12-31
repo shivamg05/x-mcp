@@ -23,31 +23,21 @@ Example use cases:
 - Track posts from a specific account
 - Analyze reactions to breaking news
 
-Parameters include:
-- `query`
-- `max_results`
-- pagination support (`next_token`)
-- time filters (`start_time`, `end_time`)
-
----
 
 ### `create_post`
 Create a new post on X as the authenticated user.
 
 Supports:
 - Standard posts (≤ 280 characters)
-- Replies (via `reply_to_post_id`)
-- Quote posts (via `quote_post_id`)
+- Replies
+- Quote posts
 
-> Note: Long posts require X Premium and are intentionally not auto-threaded.
-
----
 
 ### `login_to_x`
 Starts the OAuth login flow.
 
 Claude will return a URL that you open in your browser to authorize the app.  
-Tokens are stored **locally on your machine** and automatically refreshed.
+Tokens are stored locally on your machine and automatically refreshed.
 
 ---
 
@@ -57,7 +47,36 @@ Tokens are stored **locally on your machine** and automatically refreshed.
 - **OAuth callback:** local FastAPI HTTP server (`localhost`)
 - **Token storage:** `~/.x-mcp/auth.json`
 
-This design follows standard OAuth security practices.
+---
+
+## Installation
+
+### 1. Clone the Repository
+
+Clone this repository to your local machine:
+
+```bash
+git clone https://github.com/shivamg05/x-mcp.git
+cd x-mcp
+```
+
+### 2. Install Dependencies
+
+This project uses `uv` for dependency management.
+
+If you don’t have `uv` installed:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+install dependencies and set up the virtual environment:
+
+```bash
+uv venv
+source .venv/bin/activate
+uv sync
+```
 
 ---
 
@@ -65,7 +84,6 @@ This design follows standard OAuth security practices.
 
 To use this project, each user must create their **own X Developer App** and supply their credentials locally. This keeps credentials secure and avoids shared-account risks.
 
----
 
 ### 1. Create an X Developer Account
 
@@ -75,7 +93,6 @@ Once approved, go to:
 
 > **Developer Portal → Projects & Apps → Add App**
 
----
 
 ### 2. Configure App Authentication
 
@@ -175,7 +192,7 @@ Tokens are now stored locally and will refresh automatically.
 ## Notes & Limitations
 
 - Each user must use their **own X Developer App**
-- Posts are limited to **280 characters** unless the account has X Premium
+- Posts are limited to **280 characters** (standard X post length)
 - Tokens are stored locally at `~/.x-mcp/`
 ---
 
