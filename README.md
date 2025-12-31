@@ -108,7 +108,7 @@ Select **Web App, Automated App or Bot**
 
 #### Callback / Redirect URL
 
-Add `http://localhost:8000/callback` 
+Add `http://localhost:3000/oauth/callback` 
 
 #### Website URL
 
