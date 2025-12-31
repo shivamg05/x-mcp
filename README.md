@@ -99,9 +99,9 @@ You may use any valid URL, for example `https://example.com`
 
 This field is required by X but is not used in the local OAuth flow
 
----
-
 Leave the remaining fields blank, click save!
+
+---
 
 Copy:
 
