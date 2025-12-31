@@ -279,6 +279,63 @@ async def search_recent(
     }
 
 
+@mcp.tool()
+async def create_post(
+    text: str,
+    reply_to_post_id: str | None = None,
+    quote_post_id: str | None = None,
+) -> dict:
+    """
+    Create a new Post (Tweet) for the authenticated user.
+
+    Args:
+        text: Text of the Post.
+        reply_to_post_id: If provided, creates this Post as a reply to that Post ID.
+        quote_post_id: If provided, creates this Post as a quote of that Post ID.
+    """
+    if not text or not text.strip():
+        raise RuntimeError("text must be a non-empty string")
+
+    MAX_TEXT_LENGTH = 280
+    if len(text) > MAX_TEXT_LENGTH:
+        return {ok: False, "error": f"text must be less than {MAX_TEXT_LENGTH} characters"}
+    access_token = await get_valid_access_token()
+
+    url = f"{X_API_BASE}/2/tweets"
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+
+    payload: dict = {"text": text}
+
+    # Optional: reply
+    if reply_to_post_id:
+        payload["reply"] = {"in_reply_to_tweet_id": reply_to_post_id}
+
+    # Optional: quote
+    if quote_post_id:
+        payload["quote_tweet_id"] = quote_post_id
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        resp = await client.post(url, json=payload, headers=headers)
+
+    if resp.status_code not in (200, 201):
+        logging.error("create_post failed: %s %s", resp.status_code, resp.text)
+        return {
+            "ok": False,
+            "status_code": resp.status_code,
+            "error": resp.text,
+        }
+
+    data = resp.json()
+    return {
+        "ok": True,
+        "data": data.get("data", data),
+    }
+
+
 app = FastAPI()
 
 @app.get("/oauth/callback")
