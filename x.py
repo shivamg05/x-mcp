@@ -129,6 +129,7 @@ logging.basicConfig(level=logging.INFO)
 
 load_dotenv()
 
+X_API_BASE = "https://api.x.com"
 X_CLIENT_ID = os.getenv("X_CLIENT_ID")
 X_CLIENT_SECRET = os.getenv("X_CLIENT_SECRET")
 X_REDIRECT_URI = os.getenv("X_REDIRECT_URI")
@@ -186,6 +187,97 @@ def login_to_x() -> dict:
         "authorization_url": url,
         "message": "Please open the authorization_url in your browser and log in.",
     }
+
+@mcp.tool()
+async def search_recent(
+    query: str,
+    max_results: int = 10,
+    sort_order: str = "recency",
+    start_time: str | None = None,
+    end_time: str | None = None,
+    since_id: str | None = None,
+    until_id: str | None = None,
+    next_token: str | None = None,
+) -> dict:
+    """
+    Search recent Posts (last ~7 days) matching a query.
+
+    Args:
+        query: X search query (e.g., "from:XDevelopers -is:retweet")
+        max_results: 10-100 (X requires min 10). Defaults to 10.
+        sort_order: "recency" or "relevancy". Defaults to "recency".
+        start_time: ISO8601 UTC (YYYY-MM-DDTHH:mm:ssZ)
+        end_time: ISO8601 UTC (YYYY-MM-DDTHH:mm:ssZ)
+        since_id: return results newer than this Post ID
+        until_id: return results older than this Post ID
+        next_token: pagination token from prior response
+    """
+    if not query or not query.strip():
+        raise RuntimeError("query must be a non-empty string")
+
+    # X requires 10 <= max_results <= 100
+    if max_results < 10:
+        max_results = 10
+    if max_results > 100:
+        max_results = 100
+
+    if sort_order not in ("recency", "relevancy"):
+        raise RuntimeError("sort_order must be 'recency' or 'relevancy'")
+
+    access_token = await get_valid_access_token()
+
+    url = f"{X_API_BASE}/2/tweets/search/recent"
+    params: dict[str, str | int] = {
+        "query": query,
+        "max_results": max_results,
+        "sort_order": sort_order,
+        # Good default fields so Claude has useful context without you overfetching
+        "tweet.fields": "created_at,author_id,lang,public_metrics,conversation_id",
+        "expansions": "author_id",
+        "user.fields": "name,username,verified,profile_image_url",
+    }
+
+    # Optional params only if provided
+    if start_time:
+        params["start_time"] = start_time
+    if end_time:
+        params["end_time"] = end_time
+    if since_id:
+        params["since_id"] = since_id
+    if until_id:
+        params["until_id"] = until_id
+    if next_token:
+        # X uses next_token in meta; request param is next_token
+        params["next_token"] = next_token
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Accept": "application/json",
+    }
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        resp = await client.get(url, params=params, headers=headers)
+
+    if resp.status_code != 200:
+        # Keep this error message usable in Claude
+        logging.error("search_recent failed: %s %s", resp.status_code, resp.text)
+        return {
+            "ok": False,
+            "status_code": resp.status_code,
+            "error": resp.text,
+        }
+
+    data = resp.json()
+
+    # Return a friendly, structured payload
+    return {
+        "ok": True,
+        "query": query,
+        "tweets": data.get("data", []),
+        "includes": data.get("includes", {}),
+        "meta": data.get("meta", {}),
+    }
+
 
 app = FastAPI()
 
