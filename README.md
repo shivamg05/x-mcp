@@ -129,7 +129,7 @@ Claude Desktop discovers MCP servers via a local configuration file.
 On macOS:
 
 ```bash
-~/Library/Application\\ Support/Claude/claude_desktop_config.json
+~/Library/Application\ Support/Claude/claude_desktop_config.json
 ```
 
 Create the file if it does not already exist.
