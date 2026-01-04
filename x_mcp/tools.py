@@ -5,7 +5,7 @@ from x_mcp.oauth import (
     pkce_verifier, pkce_challenge, add_pending_state,
     build_authorization_url, get_valid_access_token,
 )
-from x_mcp.x_api import search_recent_request, create_post_request, get_liked_posts, get_user_by_username_request
+from x_mcp.x_api import search_recent_request, create_post_request, get_user_by_username_request
 
 MAX_STANDARD_POST_CHARS = 280
 
@@ -94,33 +94,6 @@ def register_tools(mcp: Any) -> None:
             return {"ok": False, "status_code": resp["status_code"], "error": resp["text"]}
         data = resp["json"]
         return {"ok": True, "data": data.get("data", data)}
-
-
-    @mcp.tool()
-    async def liked_posts(
-        user_id: str,
-        max_results: int = 10,
-        pagination_token: str | None = None,
-    ) -> dict:
-        """
-        Get Posts liked by a specific user (by user ID).
-        Note: this tool only works for users with their likes set to public.
-
-        Args:
-            user_id: The X user id (numeric string)
-            max_results: 5-100 (defaults to 10)
-            pagination_token: token from prior response meta.next_token / pagination token
-        """
-        if not user_id or not user_id.strip():
-            raise RuntimeError("user_id must be a non-empty string")
-
-        access_token = await get_valid_access_token()
-        return await get_liked_posts(
-            access_token=access_token,
-            user_id=user_id,
-            max_results=max_results,
-            pagination_token=pagination_token,
-        )
 
     
     @mcp.tool()
