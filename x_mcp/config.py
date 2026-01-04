@@ -11,6 +11,7 @@ X_SCOPES = [
     "tweet.read",
     "tweet.write",
     "users.read",
+    "like.read",
     "offline.access",
 ]
 
