@@ -8,6 +8,7 @@ async def search_recent_request(access_token: str, params: dict) -> dict:
         resp = await client.get(url, params=params, headers=headers)
     return {"status_code": resp.status_code, "json": resp.json() if resp.content else {}, "text": resp.text}
 
+
 async def create_post_request(access_token: str, payload: dict) -> dict:
     url = f"{X_API_BASE}/2/tweets"
     headers = {
@@ -18,6 +19,7 @@ async def create_post_request(access_token: str, payload: dict) -> dict:
     async with httpx.AsyncClient(timeout=30.0) as client:
         resp = await client.post(url, json=payload, headers=headers)
     return {"status_code": resp.status_code, "json": resp.json() if resp.content else {}, "text": resp.text}
+
 
 async def get_liked_posts(
     access_token: str,
@@ -59,4 +61,36 @@ async def get_liked_posts(
         "tweets": data.get("data", []),
         "includes": data.get("includes", {}),
         "meta": data.get("meta", {}),
+    }
+
+
+async def get_user_by_username_request(
+    access_token: str,
+    username: str,
+    user_fields: str | None = None,
+    expansions: str | None = None,
+    tweet_fields: str | None = None,
+) -> dict:
+    """
+    GET /2/users/by/username/{username}
+    """
+    url = f"{X_API_BASE}/2/users/by/username/{username}"
+
+    params: dict[str, str] = {}
+    if user_fields:
+        params["user.fields"] = user_fields
+    if expansions:
+        params["expansions"] = expansions
+    if tweet_fields:
+        params["tweet.fields"] = tweet_fields
+
+    headers = {"Authorization": f"Bearer {access_token}", "Accept": "application/json"}
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        resp = await client.get(url, params=params, headers=headers)
+
+    return {
+        "status_code": resp.status_code,
+        "json": resp.json() if resp.content else {},
+        "text": resp.text,
     }

@@ -5,7 +5,7 @@ from x_mcp.oauth import (
     pkce_verifier, pkce_challenge, add_pending_state,
     build_authorization_url, get_valid_access_token,
 )
-from x_mcp.x_api import search_recent_request, create_post_request, get_liked_posts
+from x_mcp.x_api import search_recent_request, create_post_request, get_liked_posts, get_user_by_username_request
 
 MAX_STANDARD_POST_CHARS = 280
 
@@ -23,6 +23,7 @@ def register_tools(mcp: Any) -> None:
             "authorization_url": url,
             "message": "Please open the authorization_url in your browser and log in.",
         }
+
 
     @mcp.tool()
     async def search_recent(
@@ -64,6 +65,7 @@ def register_tools(mcp: Any) -> None:
         data = resp["json"]
         return {"ok": True, "query": query, "tweets": data.get("data", []), "includes": data.get("includes", {}), "meta": data.get("meta", {})}
 
+
     @mcp.tool()
     async def create_post(
         text: str,
@@ -93,6 +95,7 @@ def register_tools(mcp: Any) -> None:
         data = resp["json"]
         return {"ok": True, "data": data.get("data", data)}
 
+
     @mcp.tool()
     async def liked_posts(
         user_id: str,
@@ -101,6 +104,7 @@ def register_tools(mcp: Any) -> None:
     ) -> dict:
         """
         Get Posts liked by a specific user (by user ID).
+        Note: this tool only works for users with their likes set to public.
 
         Args:
             user_id: The X user id (numeric string)
@@ -117,3 +121,47 @@ def register_tools(mcp: Any) -> None:
             max_results=max_results,
             pagination_token=pagination_token,
         )
+
+    
+    @mcp.tool()
+    async def get_user_from_username(username: str) -> dict:
+        """
+        Retrieve X user info from a single username.
+
+        Args:
+            username: e.g. "karpathy" (without @)
+        """
+        if not username or not username.strip():
+            raise RuntimeError("username must be a non-empty string")
+
+        username_clean = username.strip().lstrip("@")
+
+        access_token = await get_valid_access_token()
+
+        # Keep your existing defaults (these are good)
+        user_fields = (
+            "created_at,description,profile_image_url,protected,public_metrics,"
+            "verified,pinned_tweet_id"
+        )
+        expansions = "pinned_tweet_id"
+        tweet_fields = "created_at,author_id"
+
+        resp = await get_user_by_username_request(
+            access_token=access_token,
+            username=username_clean,
+            user_fields=user_fields,
+            expansions=expansions,
+            tweet_fields=tweet_fields,
+        )
+
+        if resp["status_code"] != 200:
+            return {"ok": False, "status_code": resp["status_code"], "error": resp["text"]}
+
+        data = resp["json"]
+        return {
+            "ok": True,
+            "username": username_clean,
+            "user": data.get("data"),
+            "includes": data.get("includes", {}),
+            "errors": data.get("errors", []),
+        }
