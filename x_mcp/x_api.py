@@ -50,3 +50,31 @@ async def get_user_by_username_request(
         "json": resp.json() if resp.content else {},
         "text": resp.text,
     }
+
+
+async def get_user_posts_request(
+    access_token: str,
+    user_id: str,
+    params: dict | None = None,
+) -> dict:
+    """
+    GET /2/users/{id}/tweets
+    Retrieves posts authored by a specific user id.
+    """
+    url = f"{X_API_BASE}/2/users/{user_id}/tweets"
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Accept": "application/json",
+    }
+
+    qparams = params or {}
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        resp = await client.get(url, params=qparams, headers=headers)
+
+    return {
+        "status_code": resp.status_code,
+        "json": resp.json() if resp.content else {},
+        "text": resp.text,
+    }

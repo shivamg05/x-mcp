@@ -5,7 +5,7 @@ from x_mcp.oauth import (
     pkce_verifier, pkce_challenge, add_pending_state,
     build_authorization_url, get_valid_access_token,
 )
-from x_mcp.x_api import search_recent_request, create_post_request, get_user_by_username_request
+from x_mcp.x_api import search_recent_request, create_post_request, get_user_by_username_request, get_user_posts_request
 
 MAX_STANDARD_POST_CHARS = 280
 
@@ -136,5 +136,85 @@ def register_tools(mcp: Any) -> None:
             "username": username_clean,
             "user": data.get("data"),
             "includes": data.get("includes", {}),
+            "errors": data.get("errors", []),
+        }
+
+
+    @mcp.tool()
+    async def get_user_posts(
+        user_id: str,
+        max_results: int = 10,
+        pagination_token: str | None = None,
+        since_id: str | None = None,
+        until_id: str | None = None,
+        start_time: str | None = None,
+        end_time: str | None = None,
+        exclude_replies: bool = False,
+        exclude_retweets: bool = False,
+    ) -> dict:
+        """
+        Retrieve posts authored by a specific user (by user_id).
+
+        Args:
+            user_id: Numeric user id (string), e.g. "2244994945"
+            max_results: 5-100
+            pagination_token: Token for next page
+            since_id: Minimum post id (newer than)
+            until_id: Maximum post id (older than)
+            start_time: ISO8601 UTC timestamp (YYYY-MM-DDTHH:mm:ssZ)
+            end_time: ISO8601 UTC timestamp (YYYY-MM-DDTHH:mm:ssZ)
+            exclude_replies: Exclude replies from results
+            exclude_retweets: Exclude retweets from results
+        """
+        if not user_id or not user_id.strip():
+            raise RuntimeError("user_id must be a non-empty string")
+
+        # X requires 5 <= max_results <= 100
+        if max_results < 5:
+            max_results = 5
+        if max_results > 100:
+            max_results = 100
+
+        token = await get_valid_access_token()
+
+        params: dict[str, str | int] = {
+            "max_results": max_results,
+            # good defaults for LLM usefulness without overfetching
+            "tweet.fields": "created_at,author_id,lang,public_metrics,conversation_id,referenced_tweets",
+        }
+
+        # optional filters
+        if pagination_token:
+            params["pagination_token"] = pagination_token
+        if since_id:
+            params["since_id"] = since_id
+        if until_id:
+            params["until_id"] = until_id
+        if start_time:
+            params["start_time"] = start_time
+        if end_time:
+            params["end_time"] = end_time
+
+        # exclude param is a list, but API accepts comma-separated in querystring
+        excludes = []
+        if exclude_replies:
+            excludes.append("replies")
+        if exclude_retweets:
+            excludes.append("retweets")
+        if excludes:
+            params["exclude"] = ",".join(excludes)
+
+        resp = await get_user_posts_request(token, user_id.strip(), params)
+
+        if resp["status_code"] != 200:
+            return {"ok": False, "status_code": resp["status_code"], "error": resp["text"]}
+
+        data = resp["json"] or {}
+        return {
+            "ok": True,
+            "user_id": user_id.strip(),
+            "tweets": data.get("data", []),
+            "includes": data.get("includes", {}),
+            "meta": data.get("meta", {}),
             "errors": data.get("errors", []),
         }
