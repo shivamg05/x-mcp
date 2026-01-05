@@ -4,6 +4,7 @@ This is an **MCP (Model Context Protocol) server** that allows MCP Clients (Clau
 
 features:
 - search recent posts on X
+- search posts by user
 - create new posts on your behalf
 
 Authentication is handled locally via OAuth2.1.  
@@ -20,9 +21,20 @@ Search posts from the last ~7 days using X’s **Recent Search API**.
 
 Example use cases:
 - Monitor discussion around a topic
-- Track posts from a specific account
 - Analyze reactions to breaking news
 
+### `get_users_posts`
+Get posts from a specific account
+
+### `get_user_from_username`
+Retrieve accound details from a username
+
+Gets:
+- user id
+- bio/description
+- created_at
+- public metrics
+- profile image url
 
 ### `create_post`
 Create a new post on X as the authenticated user.
