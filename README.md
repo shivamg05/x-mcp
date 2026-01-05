@@ -112,21 +112,20 @@ Under **User authentication settings**, enable OAuth and configure the following
 
 #### App Permissions
 
-Select **Read and Write**
+> Select **Read and Write**
 
 #### Type of App
 
-Select **Web App, Automated App or Bot**
+> Select **Web App, Automated App or Bot**
 
 #### Callback / Redirect URL
 
-Add `http://localhost:3000/oauth/callback` 
+> Add `http://localhost:3000/oauth/callback` 
 
 #### Website URL
 
-You may use any valid URL, for example `https://example.com`
-
-This field is required by X but is not used in the local OAuth flow
+> You may use any valid URL, for example `https://example.com`.
+> This field is required by X but is not used in the local OAuth flow
 
 Leave the remaining fields blank, click save!
 
@@ -144,7 +143,7 @@ Create a `.env` file in the project root (make sure to add to `.gitignore!`):
 ```
 X_CLIENT_ID=your_client_id_here
 X_CLIENT_SECRET=your_client_secret_here
-X_REDIRECT_URI=http://localhost:8000/callback
+X_REDIRECT_URI=http://localhost:3000/oauth/callback
 ```
 
 ---
